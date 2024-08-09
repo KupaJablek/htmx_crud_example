@@ -13,7 +13,7 @@ type Templates struct {
 }
 
 func (t *Templates) Render(w io.Writer, name string, data interface{}, c echo.Context) error {
-	return t.templates.ExecuteTemplate(w, name , data)
+	return t.templates.ExecuteTemplate(w, name, data)
 }
 
 func newTemplate() *Templates {
@@ -22,8 +22,32 @@ func newTemplate() *Templates {
 	}
 }
 
-type Count struct {
-	Count int
+type Person struct {
+	Name     string
+	Lastname string
+}
+
+func newPerson(name, lastname string) Person {
+	return Person{
+		Name:     name,
+		Lastname: lastname,
+	}
+}
+
+type People = []Person
+
+// data for site
+type Data struct {
+	People People
+}
+
+func newData() Data {
+	return Data{
+		People: []Person{
+			newPerson("Filbert", "Green"),
+			newPerson("Gregorny", "Hilbert"),
+		},
+	}
 }
 
 func main() {
@@ -33,14 +57,18 @@ func main() {
 
 	e.Renderer = newTemplate()
 
-	count := Count { Count: 0}
+	data := newData()
+
 	e.GET("/", func(c echo.Context) error {
-		return c.Render(200, "index", count)
+		return c.Render(200, "index", data)
 	})
 
-	e.POST("/count", func(c echo.Context) error {
-		count.Count++
-		return c.Render(200, "count", count)
+	e.POST("/people", func(c echo.Context) error {
+		name := c.FormValue("name")
+		lastname := c.FormValue("lastname")
+
+		data.People = append(data.People, newPerson(name, lastname))
+		return c.Render(200, "personlist", data)
 	})
 
 	e.Logger.Fatal(e.Start(":8080"))
